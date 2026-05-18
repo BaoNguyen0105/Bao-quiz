@@ -238,4 +238,4 @@ app.post('/api/quiz/upload', upload.single('file'), async (req, res) => {
 
 // Start listening execution
 const PORT = 3000;
-app.listen(PORT, () => console.log(`Unified JavaScript Backend Engine online at http://127.0.0.1:${PORT}`));
+app.listen(PORT, () => console.log(`Running`));
