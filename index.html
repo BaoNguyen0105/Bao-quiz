@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practice Quiz Studio</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <header>
+        <div class="logo">Practice Quiz Studio</div>
+        <div id="runtime-status" style="font-weight: 600; color: var(--text-muted);">Main Desk</div>
+    </header>
+
+    <main>
+        <!-- ================= MAIN PAGE PANEL ================= -->
+        <div id="page-main" class="page active">
+            <div class="main-container">
+                <div>
+                    <div class="card">
+                        <h2>Available Practice Quizzes</h2>
+                        <div id="quiz-list-target">
+                            <!-- Dynamic UI population items inject here -->
+                            <div class="quiz-item">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="card">
+                        <h2>Session Configuration</h2>
+                        <div class="toggle-group">
+                            <label class="toggle-item">
+                                <input type="checkbox" id="cfg-rand-q"> Randomize Questions
+                            </label>
+                            <label class="toggle-item">
+                                <input type="checkbox" id="cfg-rand-a"> Randomize Options
+                            </label>
+                            <label class="toggle-item">
+                                <input type="radio" name="cfg-feedback" value="per-q" checked> Show Answer Per Question
+                            </label>
+                            <label class="toggle-item">
+                                <input type="radio" name="cfg-feedback" value="end"> Show Answers At the End
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>Bulk Ingestion Upload</h2>
+                        <div class="file-upload-box" onclick="document.getElementById('file-picker').click()">
+                            <p style="color: var(--text-muted); font-size: 0.9rem;">Click to upload JSON or CSV template package</p>
+                            <input type="file" id="file-picker" accept=".json,.csv" style="display: none;" onchange="handleBulkUpload(event)">
+                        </div>
+
+                        <button class="btn-nav" style="width: 100%; margin-top: 1rem; font-size: 0.85rem;" onclick="toggleFormatInstructions()">
+                            📋 View Formatting Guide
+                        </button>
+
+                        <div id="format-instructions-box" style="display: none; margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+                            
+                            <div style="margin-bottom: 1.5rem;">
+                                <h4 style="color: var(--primary); margin-bottom: 0.5rem; font-size: 0.95rem;">JSON Format (.json)</h4>
+                                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                                    Must be an array of objects. Supports multiple images. The <code>correct_option</code> must match one of your choices exactly.
+                                </p>
+                                <pre style="background: var(--bg-main); padding: 0.75rem; border-radius: 4px; font-size: 0.75rem; overflow-x: auto; font-family: monospace;">
+[
+    {
+        "question_text": "What is 2 + 2?",
+        "correct_option": "4",
+        "options": ["3", "4", "5"],
+        "images": ["/images/math.png"]
+    }
+]</pre>
+                            </div>
+
+                            <div>
+                                <h4 style="color: var(--primary); margin-bottom: 0.5rem; font-size: 0.95rem;">CSV Format (.csv)</h4>
+                                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                                    Columns must follow this exact order: <br>
+                                    <strong>Question, Correct Choice, Image Path, Option A, Option B...</strong>
+                                </p>
+                                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; font-style: italic;">
+                                    *Wrap fields in double quotes if they contain commas. Leave Image Path blank if not needed.
+                                </p>
+                                <pre style="background: var(--bg-main); padding: 0.75rem; border-radius: 4px; font-size: 0.75rem; overflow-x: auto; font-family: monospace;">
+QuestionText,CorrectOption,ImageUrl,OptionA,OptionB,OptionC
+What is 2+2?,4,,3,4,5
+"Hello, World!",World,/img.png,World,Earth,Space</pre>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= QUIZ PLAYBACK VIEWPORT ================= -->
+        <div id="page-quiz" class="page">
+            <div class="quiz-layout">
+                <!-- Navigation Control Matrix Grid -->
+                <div class="sidebar">
+                    <span class="sidebar-title">Question Navigator</span>
+                    <div class="matrix-grid" id="matrix-target"></div>
+                    <button class="btn-nav" style="margin-top: auto; color: var(--incorrect); width: 100%;" onclick="abortSessionToMain()">Quit Quiz</button>
+                </div>
+
+                <!-- Main Active Canvas Container -->
+                <div class="question-canvas">
+                    <div class="question-body">
+                        <h3 id="canvas-question-text">Loading question data parameters...</h3>
+                        <div class="image-gallery" id="canvas-image-gallery"></div>
+                        <div class="options-list" id="canvas-options-box"></div>
+                    </div>
+
+                    <div class="control-bar">
+                        <button class="btn-nav" id="btn-prev" onclick="stepActiveIndex(-1)">Previous</button>
+                        <button class="btn-action" id="btn-check" onclick="evaluateActiveQuestionImmediate()">Check Answer</button>
+                        <button class="btn-action" id="btn-submit-quiz" style="display: none;" onclick="compileAndSubmitAll()">Submit Final Quiz</button>
+                        <button class="btn-nav" id="btn-next" onclick="stepActiveIndex(1)">Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- ================= QUIZ RESULTS PANEL ================= -->
+        <div id="page-results" class="page">
+            <div class="card" style="max-width: 600px; margin: 4rem auto; text-align: center; padding: 3rem 2rem;">
+                <div style="font-size: 5rem; margin-bottom: 1rem;">🏆</div>
+                <h2 style="font-size: 2rem; margin-bottom: 0.5rem;">Quiz Completed!</h2>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">Great job practicing with your friends.</p>
+                
+                <!-- Score Presentation Radial/Badge Box -->
+                <div style="background: var(--bg-main); border-radius: 12px; padding: 1.5rem; margin-bottom: 2.5rem;">
+                    <div style="font-size: 1.1rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; tracking: 0.05em;">Your Final Score</div>
+                    <div style="font-size: 3.5rem; font-weight: 800; color: var(--primary); margin: 0.5rem 0;">
+                        <span id="results-score">0</span> <span style="font-size: 1.75rem; color: var(--text-muted); font-weight: 500;">/ <span id="results-total">0</span></span>
+                    </div>
+                    <div id="results-percentage" style="font-weight: 700; color: var(--correct); font-size: 1.25rem;">0%</div>
+                </div>
+
+                <button class="btn-action" style="width: 100%; padding: 1rem;" onclick="abortSessionToMain()">Return to Main Desk</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- ================= CLIENT STATE ARCHITECTURE SCRIPT ================= -->
+    <script src="app.js" defer></script>
+</body>
+</html>
