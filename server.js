@@ -9,6 +9,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// 2. TELL EXPRESS TO SERVE YOUR FRONTEND FILES 
+// This line fixes the "Cannot GET /" error instantly!
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Configure Multer for processing file uploads in memory
 const upload = multer({ storage: multer.memoryStorage() });
 
