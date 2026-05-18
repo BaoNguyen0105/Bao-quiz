@@ -54,6 +54,7 @@ async function fetchAndRenderQuizDirectory() {
 // 2. GET /api/quiz/:id -> Fetch complete quiz layout tree
 async function initiateQuizSessionSetup(quizId) {
     try {
+        document.body.style.cursor = 'wait';
         const response = await fetch(`${API_BASE}/quiz/${quizId}`);
         if (!response.ok) throw new Error('Could not retrieve quiz parameters.');
         const quizData = await response.json();
@@ -81,7 +82,9 @@ async function initiateQuizSessionSetup(quizId) {
         generateNavigationMatrix();
         renderActiveQuestionCanvas();
         switchPage('quiz');
+        document.body.style.cursor = 'auto';
     } catch (err) {
+        document.body.style.cursor = 'auto';
         alert(`Error initializing practice session: ${err.message}`);
     }
 }
